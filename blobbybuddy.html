@@ -1,0 +1,214 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" />
+    <title>Blobby Buddy</title>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+    var config = {
+        type: Phaser.AUTO,
+        width: 1024,
+        height: 768,
+        physics: {
+            default: 'arcade',
+            arcade: {
+                //fps: 60,
+                gravity: { y: 0 },
+                debug: false
+            }
+        },
+        scene: {
+            preload: preload,
+            create: create,
+            update: update
+        }
+    };
+
+    var player;
+    var stars;
+    var platforms;
+    var cursors;
+    var xspeed = 0;
+    var yspeed = 0;
+    var maxspeed = 300;
+    var maxnegativespeed = -300;
+    var thrust = 3;
+    var drag = .5;
+    var buddysize = .5;
+    var maxenemies = 10;
+    var curenemies = 0;
+    var debugenemies = 0;
+    var enemy;
+    var enemyminsize = .05;
+    var enemymaxsize = 1;
+    var enemyminspeed = 20;
+    var enemymaxspeed = 100;
+    var spawngap = 200;
+    var enemyXspeed = 0;
+    var enemyYspeed = 0;
+    
+    var game = new Phaser.Game(config);
+
+    function preload ()
+    {
+        this.load.image('space', 'assets/space.svg');
+        this.load.spritesheet('buddy', 'assets/buddy.png', { frameWidth: 150, frameHeight: 120});
+        this.load.spritesheet('planets', 'assets/planets.png', { frameWidth: 136, frameHeight: 85});
+        this.load.spritesheet('stars', 'assets/stars.png', { frameWidth: 89, frameHeight: 85});
+    }
+
+    function create ()
+    {
+        this.add.image(513, 383, 'space');
+        player = this.physics.add.sprite(config.width/2, config.height/2, 'buddy');       
+        player.setScale(buddysize);
+
+        this.anims.create({
+            key: 'move',
+            frames: this.anims.generateFrameNumbers('buddy', { start: 1, end: 2 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'default',
+            frames: [ { key: 'buddy', frame: 0 } ],
+            frameRate: 20
+        });
+        enemies = this.physics.add.group();
+        cursors = this.input.keyboard.createCursorKeys();
+    }
+
+    function update ()
+    {
+        if (cursors.left.isDown)
+        {
+            player.scaleX = buddysize /1.5;
+            player.rotation = -.2;
+            player.anims.play('move', true);
+            if (xspeed > maxnegativespeed)
+            {
+                xspeed -= thrust;
+            }
+        }
+        else if (cursors.right.isDown)
+        {
+            player.rotation = .2;
+            player.scaleX = buddysize /1.5;
+            player.anims.play('move', true);
+            if (xspeed < maxspeed)
+            {
+                xspeed += thrust;
+            }
+        }
+        else
+        {
+            player.rotation = 0;
+            if (xspeed != 0 && xspeed <0)
+            {xspeed += drag}
+            if (xspeed !=0 && xspeed >0)
+            {xspeed -= drag}
+            player.scaleX = buddysize;
+        }
+       
+        if (cursors.up.isDown)
+        {
+            player.scaleY = buddysize /1.5;
+            player.anims.play('move', true);
+            if (yspeed > maxnegativespeed)
+            {
+                yspeed -= thrust;
+            }
+        }
+        else if (cursors.down.isDown)
+        {
+            player.scaleY = buddysize /1.5;
+            player.anims.play('move', true);
+            if (yspeed < maxspeed)
+            {
+                yspeed += thrust;
+            }
+        }
+        else
+        {
+            player.scaleY = buddysize;
+            if (yspeed != 0 && yspeed <0)
+            {yspeed += drag}
+            if (yspeed !=0 && yspeed >0)
+            {yspeed -= drag}          
+        }
+        if (cursors.up.isDown == false && cursors.down.isDown == false && cursors.left.isDown == false && cursors.right.isDown == false)
+        {
+            player.anims.play('default');
+        }
+        var randomSize = Math.random() * (enemymaxsize-enemyminsize) + enemyminsize;
+        if (curenemies < maxenemies)
+        {
+            var spawnx;
+            var spawny;
+            var enemyArray = ['planets', 'stars']
+            var spawnStartArray = ['top', 'bottom', 'left', 'right']
+            var randomEnemy = Math.floor(Math.random()*enemyArray.length);
+            var randomSpeed = Math.floor(Math.random() * (enemymaxspeed-enemyminspeed)) + enemyminspeed;
+            var randomSprite = Math.floor(Math.random() * 4);
+            var randomSpawnStart = Math.floor(Math.random()*spawnStartArray.length);
+            randomSpawnStart = spawnStartArray[randomSpawnStart];
+            if (randomSpawnStart == 'top')
+            {
+                spawny = 0;
+                spawnx = Math.floor(Math.random() * config.width)
+                enemyXspeed = 0;
+                enemyYspeed = randomSpeed;
+            }
+            if (randomSpawnStart == 'bottom')
+            {
+                spawny = config.height;
+                spawnx = Math.floor(Math.random() * config.width)
+                enemyXspeed = 0;
+                enemyYspeed = -Math.abs(randomSpeed);
+            }
+            if (randomSpawnStart == 'left')
+            {
+                spawnx = 0;
+                spawny = Math.floor(Math.random() * config.height)
+                enemyYspeed = 0;
+                enemyXspeed = randomSpeed;
+            }
+            if (randomSpawnStart == 'top')
+            {
+                spawnx = config.width;
+                spawny = Math.floor(Math.random() * config.height)
+                enemyYspeed = 0;
+                enemyXspeed = -Math.abs(randomSpeed);
+            }
+            var enemy = enemies.create(spawnx, spawny, enemyArray[randomEnemy], randomSprite).setScale(randomSize).setVelocityX(enemyXspeed).setVelocityY(enemyYspeed);
+            curenemies +=1;  
+        }
+        enemies.children.iterate(function (child){
+            if (child.x > config.width || child.x < 0 || child.y > config.height || child.y < 0 || child.body.velocity['x'] == 0 && child.body.velocity['y'] == 0)
+            {
+                if (curenemies - 1 > 0)
+                {
+                    curenemies-= 1;
+                    console.log(curenemies);
+                }
+                child.disableBody(true, true);              
+            }
+        });
+        player.setVelocityX(xspeed);
+        player.setVelocityY(yspeed);
+        this.physics.world.wrap(player);
+    }
+</script>
+
+</body>
+</html>
