@@ -45,8 +45,8 @@
     var drag = .5;
     var buddysize = .5;
     var maxenemies = 10;
-    var curenemies = 0;
     var debugenemies = 0;
+    var curenemies;
     var enemy;
     var enemyminsize = .05;
     var enemymaxsize = 1;
@@ -90,6 +90,7 @@
 
     function update ()
     {
+        curenemies = enemies.getTotalUsed();
         if (cursors.left.isDown)
         {
             player.scaleX = buddysize /1.5;
@@ -191,16 +192,10 @@
                 enemyXspeed = -Math.abs(randomSpeed);
             }
             var enemy = enemies.create(spawnx, spawny, enemyArray[randomEnemy], randomSprite).setScale(randomSize).setVelocityX(enemyXspeed).setVelocityY(enemyYspeed);
-            curenemies +=1;  
         }
         enemies.children.iterate(function (child){
             if (child.x > config.width || child.x < 0 || child.y > config.height || child.y < 0 || child.body.velocity['x'] == 0 && child.body.velocity['y'] == 0)
             {
-                if (curenemies - 1 > 0)
-                {
-                    //curenemies-= 1;
-                    console.log(enemies.countActive);
-                }
                 child.disableBody(true, true);              
             }
         });
