@@ -264,10 +264,13 @@
         else { sizecompensation = 0.2;}
         if (enemy.scaleX - buddysize <= sizecompensation) {
             enemy.disableBody(true, true);
-            buddysize += buddyGrowthRate;
+            //buddysize += buddyGrowthRate;
+			buddysize += enemy.scaleX /10;
             player.setScale(buddysize);
-            enemyminsize += .01;
-            enemymaxsize += .01;
+            //enemyminsize += .01;
+            //enemymaxsize += .01;
+			enemyminsize += enemy.scaleX/10;
+			enemymaxsize += enemy.scaleX/10;
             score += Math.round(enemy.scaleX * 100);
             scoreText.setText('Score: ' + score);
         }
