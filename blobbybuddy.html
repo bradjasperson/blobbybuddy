@@ -1,9 +1,9 @@
-<!doctype html> 
+﻿<!doctype html> 
 <html lang="en"> 
-<head> 
+<head>
     <meta charset="UTF-8" />
     <title>Blobby Buddy</title>
-    <script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.19.0/dist/phaser.js"></script>
     <style type="text/css">
         body {
             margin: 0;
@@ -43,9 +43,8 @@
     var maxnegativespeed = -300;
     var thrust = 3;
     var drag = .5;
-    var buddysize = .5;
-    var maxenemies = 10;
-    var debugenemies = 0;
+    var buddysize = .2;
+    var maxenemies = 20;
     var curenemies;
     var enemy;
     var enemyminsize = .05;
@@ -55,12 +54,20 @@
     var spawngap = 200;
     var enemyXspeed = 0;
     var enemyYspeed = 0;
+    var gameOver = false;
+    var buddyGrowthRate = .01;
+    var boom;
+    var score = 0;
+    var sleepTimer = 60;
+    var gameoverSize = 5;
+    var ended = false;
     
     var game = new Phaser.Game(config);
 
     function preload ()
     {
         this.load.image('space', 'assets/space.svg');
+        this.load.image('startend', 'assets/startend.svg');
         this.load.spritesheet('buddy', 'assets/buddy.png', { frameWidth: 150, frameHeight: 120});
         this.load.spritesheet('planets', 'assets/planets.png', { frameWidth: 136, frameHeight: 85});
         this.load.spritesheet('stars', 'assets/stars.png', { frameWidth: 89, frameHeight: 85});
@@ -68,8 +75,9 @@
 
     function create ()
     {
-        this.add.image(513, 383, 'space');
-        player = this.physics.add.sprite(config.width/2, config.height/2, 'buddy');       
+        this.add.image(config.width/2, config.height/2, 'space');
+        boom = this.add.particles('buddy');
+        player = this.physics.add.sprite(config.width / 2, config.height / 2, 'buddy');
         player.setScale(buddysize);
 
         this.anims.create({
@@ -84,18 +92,62 @@
             frames: [ { key: 'buddy', frame: 0 } ],
             frameRate: 20
         });
+        this.anims.create({
+            key: 'moveBig',
+            frames: this.anims.generateFrameNumbers('buddy', { start: 4, end: 5 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'defaultBig',
+            frames: [{ key: 'buddy', frame: 3 }],
+            frameRate: 20
+        });
         enemies = this.physics.add.group();
         cursors = this.input.keyboard.createCursorKeys();
+        //this.physics.add.collider(player, enemies, hitEnemy);
+        this.physics.add.overlap(player, enemies, hitEnemy);
+        scoreText = this.add.text(16, 16, 'Score: 0', { fontFamily: '"Impact"', fontSize: '32px', fill: '#FFBAD2' });
     }
 
     function update ()
     {
+        if (gameOver && buddysize < gameoverSize)
+        {
+            if (sleepTimer == 0) {
+                if (ended == false) {
+                    gameoverText = this.add.text(config.width / 2 - 220, config.height / 2 - 200, 'Game Over', { fontFamily: '"Impact"', fontSize: '100px', fill: '#FFBAD2' });
+                    gameoverText.setDepth(1);
+                    buddy = this.add.sprite(config.width / 2, config.height / 2, 'buddy', 2);
+                    buddy.setDepth(1);
+                    ended = true;
+                    //return;
+                }
+            }
+            else { sleepTimer -= 1;}
+        }
+        if (buddysize >= gameoverSize)
+        {
+            if (ended == false) {
+                player.disableBody(true, true);
+                this.add.image(config.width / 2, config.height / 2, 'startend');
+                gameoverText = this.add.text(config.width / 2 - 220, config.height / 2 - 200, 'You Win!', { fontFamily: '"Impact"', fontSize: '100px', fill: '#FFBAD2' });
+                gameoverText.setDepth(1);
+                gameoverText = this.add.text(config.width / 2 - 300, config.height / 2 - 50, 'You Literally Ate Everything!', { fontFamily: '"Impact"', fontSize: '50px', fill: '#FFBAD2' });
+                gameoverText.setDepth(1);
+                scoreText.setDepth(1);
+                ended = true;
+            }
+            return;
+        }
+
         curenemies = enemies.getTotalUsed();
         if (cursors.left.isDown)
         {
+            player.anims.play('move', true);
             player.scaleX = buddysize /1.5;
             player.rotation = -.2;
-            player.anims.play('move', true);
             if (xspeed > maxnegativespeed)
             {
                 xspeed -= thrust;
@@ -103,15 +155,15 @@
         }
         else if (cursors.right.isDown)
         {
-            player.rotation = .2;
-            player.scaleX = buddysize /1.5;
             player.anims.play('move', true);
+            player.rotation = .2;
+            player.scaleX = buddysize / 1.5;
             if (xspeed < maxspeed)
             {
                 xspeed += thrust;
             }
         }
-        else
+        else 
         {
             player.rotation = 0;
             if (xspeed != 0 && xspeed <0)
@@ -123,8 +175,8 @@
        
         if (cursors.up.isDown)
         {
-            player.scaleY = buddysize /1.5;
             player.anims.play('move', true);
+            player.scaleY = buddysize /1.5;
             if (yspeed > maxnegativespeed)
             {
                 yspeed -= thrust;
@@ -132,8 +184,8 @@
         }
         else if (cursors.down.isDown)
         {
-            player.scaleY = buddysize /1.5;
             player.anims.play('move', true);
+            player.scaleY = buddysize /1.5;
             if (yspeed < maxspeed)
             {
                 yspeed += thrust;
@@ -147,10 +199,10 @@
             if (yspeed !=0 && yspeed >0)
             {yspeed -= drag}          
         }
-        if (cursors.up.isDown == false && cursors.down.isDown == false && cursors.left.isDown == false && cursors.right.isDown == false)
-        {
-            player.anims.play('default');
+        if (cursors.up.isDown == false && cursors.down.isDown == false && cursors.left.isDown == false && cursors.right.isDown == false) {
+            player.anims.play('default', true);
         }
+        
         var randomSize = Math.random() * (enemymaxsize-enemyminsize) + enemyminsize;
         if (curenemies < maxenemies)
         {
@@ -191,7 +243,8 @@
                 enemyYspeed = 0;
                 enemyXspeed = -Math.abs(randomSpeed);
             }
-            var enemy = enemies.create(spawnx, spawny, enemyArray[randomEnemy], randomSprite).setScale(randomSize).setVelocityX(enemyXspeed).setVelocityY(enemyYspeed);
+            enemies.create(spawnx, spawny, enemyArray[randomEnemy], randomSprite).setScale(randomSize).setVelocityX(enemyXspeed).setVelocityY(enemyYspeed);
+            scoreText.setDepth(1);
         }
         enemies.children.iterate(function (child){
             if (child.x > config.width || child.x < 0 || child.y > config.height || child.y < 0 || child.body.velocity['x'] == 0 && child.body.velocity['y'] == 0)
@@ -202,6 +255,35 @@
         player.setVelocityX(xspeed);
         player.setVelocityY(yspeed);
         this.physics.world.wrap(player);
+    }
+
+    function hitEnemy(player, enemy)
+    {
+        var sizecompensation;
+        if (enemy.texture.key == 'planets') {sizecompensation = 0.1;}
+        else { sizecompensation = 0.2;}
+        if (enemy.scaleX - buddysize <= sizecompensation) {
+            enemy.disableBody(true, true);
+            buddysize += buddyGrowthRate;
+            player.setScale(buddysize);
+            enemyminsize += .01;
+            enemymaxsize += .01;
+            score += Math.round(enemy.scaleX * 100);
+            scoreText.setText('Score: ' + score);
+        }
+        else {
+            var boomsize = buddysize * 20;
+            boom.createEmitter({
+                x: player.x,
+                y: player.y,
+                speed: { min: -800, max: 800 },
+                angle: { min: 0, max: 360 },
+                scale: { start: .05, end: 0 },
+                lifespan: 500,
+            }).explode(boomsize, player.x, player.y);
+            player.disableBody(true, true);       
+            gameOver = true;
+        }
     }
 </script>
 
