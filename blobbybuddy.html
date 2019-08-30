@@ -271,6 +271,8 @@
             //enemymaxsize += .01;
 			enemyminsize += enemy.scaleX/10;
 			enemymaxsize += enemy.scaleX/10;
+			if (buddysize >= 1 && maxenemies > 10)
+			{maxenemies -= 1;}
             score += Math.round(enemy.scaleX * 100);
             scoreText.setText('Score: ' + score);
         }
