@@ -61,6 +61,7 @@
     var sleepTimer = 60;
     var gameoverSize = 5;
     var ended = false;
+    var eating = false;
     
     var game = new Phaser.Game(config);
 
@@ -88,20 +89,15 @@
         });
 
         this.anims.create({
-            key: 'default',
-            frames: [ { key: 'buddy', frame: 0 } ],
-            frameRate: 20
-        });
-        this.anims.create({
-            key: 'moveBig',
-            frames: this.anims.generateFrameNumbers('buddy', { start: 4, end: 5 }),
-            frameRate: 10,
-            repeat: -1
+            key: 'eat',
+            frames: [{ key: 'buddy', frame: 0 }, { key: 'buddy', frame: 6 }],
+            duration: 150,
+            repeat: 3
         });
 
         this.anims.create({
-            key: 'defaultBig',
-            frames: [{ key: 'buddy', frame: 3 }],
+            key: 'default',
+            frames: [ { key: 'buddy', frame: 0 } ],
             frameRate: 20
         });
         enemies = this.physics.add.group();
@@ -113,6 +109,8 @@
 
     function update ()
     {
+        if (player.anims.isPlaying && player.anims.currentAnim.key === 'eat') { eating = true; }
+        else { eating = false;}
         if (gameOver && buddysize < gameoverSize)
         {
             if (sleepTimer == 0) {
@@ -145,7 +143,7 @@
         curenemies = enemies.getTotalUsed();
         if (cursors.left.isDown)
         {
-            player.anims.play('move', true);
+            if (eating == false) { player.anims.play('move', true); }
             player.scaleX = buddysize /1.5;
             player.rotation = -.2;
             if (xspeed > maxnegativespeed)
@@ -155,7 +153,7 @@
         }
         else if (cursors.right.isDown)
         {
-            player.anims.play('move', true);
+            if (eating == false) { player.anims.play('move', true); }
             player.rotation = .2;
             player.scaleX = buddysize / 1.5;
             if (xspeed < maxspeed)
@@ -175,7 +173,7 @@
        
         if (cursors.up.isDown)
         {
-            player.anims.play('move', true);
+            if (eating == false) { player.anims.play('move', true); }
             player.scaleY = buddysize /1.5;
             if (yspeed > maxnegativespeed)
             {
@@ -184,7 +182,7 @@
         }
         else if (cursors.down.isDown)
         {
-            player.anims.play('move', true);
+            if (eating == false) { player.anims.play('move', true); }
             player.scaleY = buddysize /1.5;
             if (yspeed < maxspeed)
             {
@@ -199,7 +197,7 @@
             if (yspeed !=0 && yspeed >0)
             {yspeed -= drag}          
         }
-        if (cursors.up.isDown == false && cursors.down.isDown == false && cursors.left.isDown == false && cursors.right.isDown == false) {
+        if (cursors.up.isDown == false && cursors.down.isDown == false && cursors.left.isDown == false && cursors.right.isDown == false && eating == false) {
             player.anims.play('default', true);
         }
         
@@ -264,6 +262,7 @@
         else { sizecompensation = 0.2;}
         if (enemy.scaleX - buddysize <= sizecompensation) {
             enemy.disableBody(true, true);
+            player.anims.play('eat', true);
             //buddysize += buddyGrowthRate;
 			buddysize += enemy.scaleX /10;
             player.setScale(buddysize);
